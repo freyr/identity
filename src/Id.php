@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+namespace Freyr\Identity;
 
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
