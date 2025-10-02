@@ -7,9 +7,12 @@ namespace Freyr\Identity;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 class Id
 {
-    final private function __construct(readonly protected UuidInterface $id)
+    protected function __construct(protected UuidInterface $id)
     {
     }
 
@@ -36,7 +39,7 @@ class Id
 
     public function toBinary(): string
     {
-        return $this->id->toString();
+        return $this->id->getBytes();
     }
 
     public function sameAs(Id $id): bool
