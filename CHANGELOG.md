@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 - 2025-10-14
+
+### Added
+- `intersect()` method to `IdCollection` for finding common IDs between collections
+
+### Changed
+- `IdCollection` class is no longer final to allow inheritance
+- `IdCollection::$ids` property is now readonly for immutability
+- `IdCollection::contains()` now uses `array_any()` for cleaner implementation
+- `IdCollection::merge()` simplified implementation
+
+### Removed
+- **[BC BREAK]** `IdCollection::each()` method - use foreach iteration directly instead
+
 ## 0.2.1 - 2025-10-13
 
 ### Added

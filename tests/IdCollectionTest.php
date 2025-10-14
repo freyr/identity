@@ -226,23 +226,6 @@ final class IdCollectionTest extends TestCase
         self::assertSame($id2, $ids[1]);
     }
 
-    public function testEachIteratesOverAllIds(): void
-    {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        $collection = IdCollection::fromArray([$id1, $id2]);
-
-        $ids = [];
-        $collection->each(static function (Id $id) use (&$ids): void {
-            $ids[] = $id;
-        });
-
-        self::assertCount(2, $ids);
-        self::assertSame($id1, $ids[0]);
-        self::assertSame($id2, $ids[1]);
-    }
-
     public function testMergeCombinesTwoCollections(): void
     {
         $id1 = Id::new();
@@ -315,5 +298,70 @@ final class IdCollectionTest extends TestCase
 
         self::assertSame($id1, $array[0]);
         self::assertSame($id2, $array[1]);
+    }
+
+    public function testIntersectReturnsCommonIds(): void
+    {
+        $id1 = Id::new();
+        $id2 = Id::new();
+        $id3 = Id::new();
+        $id4 = Id::new();
+
+        $collection1 = IdCollection::fromArray([$id1, $id2, $id3]);
+        $collection2 = IdCollection::fromArray([$id2, $id3, $id4]);
+
+        $intersection = $collection1->intersect($collection2);
+
+        self::assertCount(2, $intersection);
+        self::assertFalse($intersection->contains($id1));
+        self::assertTrue($intersection->contains($id2));
+        self::assertTrue($intersection->contains($id3));
+        self::assertFalse($intersection->contains($id4));
+    }
+
+    public function testIntersectReturnsEmptyWhenNoCommonIds(): void
+    {
+        $id1 = Id::new();
+        $id2 = Id::new();
+        $id3 = Id::new();
+        $id4 = Id::new();
+
+        $collection1 = IdCollection::fromArray([$id1, $id2]);
+        $collection2 = IdCollection::fromArray([$id3, $id4]);
+
+        $intersection = $collection1->intersect($collection2);
+
+        self::assertCount(0, $intersection);
+        self::assertTrue($intersection->isEmpty());
+    }
+
+    public function testIntersectWithEmptyCollectionReturnsEmpty(): void
+    {
+        $id1 = Id::new();
+        $id2 = Id::new();
+
+        $collection1 = IdCollection::fromArray([$id1, $id2]);
+        $collection2 = IdCollection::empty();
+
+        $intersection = $collection1->intersect($collection2);
+
+        self::assertCount(0, $intersection);
+        self::assertTrue($intersection->isEmpty());
+    }
+
+    public function testIntersectIsImmutable(): void
+    {
+        $id1 = Id::new();
+        $id2 = Id::new();
+        $id3 = Id::new();
+
+        $collection1 = IdCollection::fromArray([$id1, $id2]);
+        $collection2 = IdCollection::fromArray([$id2, $id3]);
+
+        $intersection = $collection1->intersect($collection2);
+
+        self::assertCount(2, $collection1);
+        self::assertCount(2, $collection2);
+        self::assertCount(1, $intersection);
     }
 }

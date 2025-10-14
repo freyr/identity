@@ -12,12 +12,12 @@ use Traversable;
 /**
  * @implements IteratorAggregate<int, Id>
  */
-final class IdCollection implements Countable, IteratorAggregate
+class IdCollection implements Countable, IteratorAggregate
 {
     /**
      * @param array<Id> $ids
      */
-    private function __construct(private array $ids)
+    private function __construct(private readonly array $ids)
     {
     }
 
@@ -53,13 +53,7 @@ final class IdCollection implements Countable, IteratorAggregate
 
     public function contains(Id $id): bool
     {
-        foreach ($this->ids as $existingId) {
-            if ($existingId->sameAs($id)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->ids, fn ($existingId) => $existingId->sameAs($id));
     }
 
     public function isEmpty(): bool
@@ -118,19 +112,21 @@ final class IdCollection implements Countable, IteratorAggregate
         return new ArrayIterator($this->ids);
     }
 
-    /**
-     * @param callable(Id): void $callback
-     */
-    public function each(callable $callback): void
-    {
-        foreach ($this->ids as $id) {
-            $callback($id);
-        }
-    }
-
     public function merge(IdCollection $other): self
     {
-        return new self(array_values([...$this->ids, ...$other->ids]));
+        $array = [...$this->ids, ...$other->ids];
+        return new self(array_values($array));
+    }
+
+    public function intersect(IdCollection $other): self
+    {
+        $ids = array_uintersect(
+            $this->ids,
+            $other->ids,
+            static fn (Id $a, Id $b): int => strcmp((string) $a, (string) $b)
+        );
+
+        return new self(array_values($ids));
     }
 
     /**
