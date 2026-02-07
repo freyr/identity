@@ -57,7 +57,7 @@ docker compose run --rm php sh
 ```
 
 ## Technical Requirements
-- **PHP**: ^8.4 (strict typing enabled)
+- **PHP**: ^8.2 (strict typing enabled)
 - **UUID**: ramsey/uuid ^4.7
 - **Namespace**: `Freyr\Identity\`
 
