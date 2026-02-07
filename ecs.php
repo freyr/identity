@@ -2,23 +2,33 @@
 
 declare(strict_types=1);
 
-ini_set('memory_limit', '3G');
-
+use PhpCsFixer\Fixer\Basic\SingleLineEmptyBodyFixer;
+use PhpCsFixer\Fixer\ControlStructure\YodaStyleFixer;
+use PhpCsFixer\Fixer\Import\GlobalNamespaceImportFixer;
+use PhpCsFixer\Fixer\Operator\NotOperatorWithSuccessorSpaceFixer;
+use PhpCsFixer\Fixer\Phpdoc\PhpdocAlignFixer;
+use PhpCsFixer\Fixer\Phpdoc\PhpdocLineSpanFixer;
 use Symplify\EasyCodingStandard\Config\ECSConfig;
-use Symplify\EasyCodingStandard\ValueObject\Set\SetList;
 
-return static function (ECSConfig $config): void {
-    $config->parallel();
-    $config->import(SetList::PSR_12);
-    $config->import(SetList::ARRAY);
-    $config->import(SetList::CLEAN_CODE);
-    $config->import(SetList::DOCTRINE_ANNOTATIONS);
-
-
-    $config->paths([
-        __DIR__ . '/src',
-        __DIR__ . '/tests',
-    ]);
-    $config->cacheDirectory('cache/ecs');
-    $config->fileExtensions(['php']);
-};
+return ECSConfig::configure()
+    ->withPaths(['src', 'tests'])
+    ->withSkip(
+        [
+            '/var',
+            '/vendor',
+            '/docker',
+            GlobalNamespaceImportFixer::class,
+            PhpdocAlignFixer::class,
+            PhpdocLineSpanFixer::class,
+            NotOperatorWithSuccessorSpaceFixer::class,
+        ]
+    )
+    ->withPreparedSets(psr12: true, common: true, symplify: true)
+    ->withPhpCsFixerSets(symfony: true)
+    ->withConfiguredRule(YodaStyleFixer::class, [
+        'equal' => false,
+        'identical' => false,
+        'less_and_greater' => false,
+    ])
+    ->withRules([SingleLineEmptyBodyFixer::class])
+    ->withRootFiles();

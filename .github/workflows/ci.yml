@@ -29,8 +29,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor
-          key: php-${{ matrix.php }}-composer-${{ hashFiles('composer.lock') }}
-          restore-keys: php-${{ matrix.php }}-composer-
+          key: php-${{ matrix.php }}-deps-${{ hashFiles('composer.json') }}
+          restore-keys: php-${{ matrix.php }}-deps-
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
@@ -38,8 +38,8 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit --testdox
 
-  quality:
-    name: Code Quality (PHP 8.4)
+  phpstan:
+    name: PHPStan
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor
-          key: php-8.4-composer-${{ hashFiles('composer.lock') }}
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
           restore-keys: php-8.4-composer-
 
       - name: Install dependencies
@@ -64,6 +64,30 @@ jobs:
 
       - name: Run PHPStan
         run: vendor/bin/phpstan --memory-limit=-1
+
+  ecs:
+    name: ECS
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
+          restore-keys: php-8.4-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
 
       - name: Run ECS
         run: vendor/bin/ecs check

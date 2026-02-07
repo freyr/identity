@@ -17,9 +17,9 @@ class IdCollection implements Countable, IteratorAggregate
     /**
      * @param array<Id> $ids
      */
-    private function __construct(private readonly array $ids)
-    {
-    }
+    private function __construct(
+        private readonly array $ids,
+    ) {}
 
     /**
      * @param array<Id> $ids
@@ -38,15 +38,13 @@ class IdCollection implements Countable, IteratorAggregate
     {
         $ids = $this->ids;
         $ids[] = $id;
+
         return new self($ids);
     }
 
     public function remove(Id $id): self
     {
-        $ids = array_filter(
-            $this->ids,
-            static fn (Id $existingId): bool => !$existingId->sameAs($id)
-        );
+        $ids = array_filter($this->ids, static fn (Id $existingId): bool => !$existingId->sameAs($id));
 
         return new self(array_values($ids));
     }
@@ -69,6 +67,7 @@ class IdCollection implements Countable, IteratorAggregate
     public function last(): ?Id
     {
         $count = count($this->ids);
+
         return $count > 0 ? $this->ids[$count - 1] : null;
     }
 
@@ -91,12 +90,15 @@ class IdCollection implements Countable, IteratorAggregate
     public function filter(callable $callback): self
     {
         $ids = array_filter($this->ids, $callback);
+
         return new self(array_values($ids));
     }
 
     /**
      * @template T
+     *
      * @param callable(Id): T $callback
+     *
      * @return array<T>
      */
     public function map(callable $callback): array
@@ -112,13 +114,14 @@ class IdCollection implements Countable, IteratorAggregate
         return new ArrayIterator($this->ids);
     }
 
-    public function merge(IdCollection $other): self
+    public function merge(self $other): self
     {
         $array = [...$this->ids, ...$other->ids];
+
         return new self(array_values($array));
     }
 
-    public function intersect(IdCollection $other): self
+    public function intersect(self $other): self
     {
         $ids = array_uintersect(
             $this->ids,
@@ -134,10 +137,7 @@ class IdCollection implements Countable, IteratorAggregate
      */
     public function toStringArray(): array
     {
-        return array_map(
-            static fn (Id $id): string => (string) $id,
-            $this->ids
-        );
+        return array_map(static fn (Id $id): string => (string) $id, $this->ids);
     }
 
     /**
@@ -145,9 +145,6 @@ class IdCollection implements Countable, IteratorAggregate
      */
     public function toBinaryArray(): array
     {
-        return array_map(
-            static fn (Id $id): string => $id->toBinary(),
-            $this->ids
-        );
+        return array_map(static fn (Id $id): string => $id->toBinary(), $this->ids);
     }
 }

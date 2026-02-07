@@ -12,9 +12,9 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Id
 {
-    protected function __construct(protected UuidInterface $id)
-    {
-    }
+    protected function __construct(
+        protected UuidInterface $id,
+    ) {}
 
     final public static function new(): static
     {
@@ -24,6 +24,7 @@ class Id
     final public static function fromBinary(string $bytes): static
     {
         $uuid = Uuid::fromBytes($bytes);
+
         return new static($uuid);
     }
 
@@ -42,7 +43,7 @@ class Id
         return $this->id->getBytes();
     }
 
-    public function sameAs(Id $id): bool
+    public function sameAs(self $id): bool
     {
         return $this->id->equals($id->id);
     }
