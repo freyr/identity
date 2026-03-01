@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\Type;
 use Freyr\Identity\Id;
 
 /**
- * Example Doctrine custom type for storing Id as binary UUID v7 in the database.
+ * Example Doctrine custom type for storing Id as binary ULID in the database.
  *
  * This example demonstrates compatibility with the Id class contract.
  * The Id class provides all necessary methods:

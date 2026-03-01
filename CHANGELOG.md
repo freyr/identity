@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0 - 2026-03-01
+
+### Changed
+- **[BC BREAK]** Replaced `ramsey/uuid` with `symfony/uid` as the backing library
+- **[BC BREAK]** `Id` is now backed by monotonic ULID instead of UUID v7
+- **[BC BREAK]** `__toString()` returns 26-char uppercase ULID (Crockford Base32) instead of 36-char UUID string
+- **[BC BREAK]** Protected `$id` property type changed from `UuidInterface` to `Ulid`
+- **[BC BREAK]** `fromString()` and `fromBinary()` now reject NIL and MAX sentinel values
+- `fromString()` parameter renamed from `$uuid` to `$id`
+- `fromString()` accepts ULID, UUID hex, base58, and binary formats via symfony/uid auto-detection
+
+### Added
+- Monotonic ordering guarantee within the same millisecond (per process)
+- `tests/IdTest.php` with 19 test cases covering the full `Id` API
+
+### Removed
+- `ramsey/uuid` dependency
+
 ## 0.4.0 - 2026-02-07
 
 ### Added
