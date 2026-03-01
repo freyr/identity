@@ -1,6 +1,6 @@
 # Freyr Identity
 
-UUID v7 identity objects for PHP domain models. Provides an immutable `Id` value object and an `IdCollection` for working with sets of identifiers.
+Monotonic ULID identity objects for PHP domain models. Provides an immutable `Id` value object and an `IdCollection` for working with sets of identifiers.
 
 ## Installation
 
@@ -20,10 +20,10 @@ Create, convert and compare identifiers.
 use Freyr\Identity\Id;
 
 $id = Id::new();
-$id = Id::fromString('01920a7c-8b00-7000-8000-000000000001');
+$id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
 $id = Id::fromBinary($bytes);
 
-(string) $id;    // UUID string
+(string) $id;    // ULID string (26 chars, Crockford Base32)
 $id->toBinary(); // 16-byte binary
 $id->sameAs($other);
 ```

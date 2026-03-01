@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Freyr\Identity;
 
-use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
+use InvalidArgumentException;
+use Symfony\Component\Uid\MaxUlid;
+use Symfony\Component\Uid\NilUlid;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * @phpstan-consistent-constructor
@@ -13,34 +15,38 @@ use Ramsey\Uuid\UuidInterface;
 class Id
 {
     protected function __construct(
-        protected UuidInterface $id,
-    ) {}
+        protected Ulid $id,
+    ) {
+        if ($id instanceof NilUlid || $id instanceof MaxUlid) {
+            throw new InvalidArgumentException('NIL and MAX ULIDs are not valid identifiers.');
+        }
+    }
 
     final public static function new(): static
     {
-        return new static(Uuid::uuid7());
+        return new static(new Ulid());
     }
 
     final public static function fromBinary(string $bytes): static
     {
-        $uuid = Uuid::fromBytes($bytes);
+        $ulid = Ulid::fromBinary($bytes);
 
-        return new static($uuid);
+        return new static($ulid);
     }
 
-    final public static function fromString(string $uuid): static
+    final public static function fromString(string $id): static
     {
-        return new static(Uuid::fromString($uuid));
+        return new static(Ulid::fromString($id));
     }
 
     public function __toString(): string
     {
-        return $this->id->toString();
+        return (string) $this->id;
     }
 
     public function toBinary(): string
     {
-        return $this->id->getBytes();
+        return $this->id->toBinary();
     }
 
     public function sameAs(self $id): bool

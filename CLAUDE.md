@@ -1,6 +1,6 @@
 # Freyr Identity
 
-PHP library providing `Id` value object wrapping UUID v7 via ramsey/uuid. Thin adapter for domain identifiers.
+PHP library providing `Id` value object wrapping monotonic ULID via symfony/uid. Thin adapter for domain identifiers.
 
 ## Critical Rules
 

@@ -179,14 +179,14 @@ final class IdCollectionTest extends TestCase
 
     public function testFilterFiltersIdsBasedOnCallback(): void
     {
-        $id1 = Id::fromString('01920a7c-8b00-7000-8000-000000000001');
-        $id2 = Id::fromString('01920a7c-8b00-7000-8000-000000000002');
-        $id3 = Id::fromString('01920a7c-8b00-7000-8000-000000000003');
+        $id1 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA1');
+        $id2 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA2');
+        $id3 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA3');
 
         $collection = IdCollection::fromArray([$id1, $id2, $id3]);
 
         $filtered = $collection->filter(
-            static fn (Id $id): bool => str_ends_with((string) $id, '001') || str_ends_with((string) $id, '003')
+            static fn (Id $id): bool => str_ends_with((string) $id, '1') || str_ends_with((string) $id, '3')
         );
 
         self::assertCount(2, $filtered);
