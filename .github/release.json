@@ -1,0 +1,11 @@
+{
+  "packages": [
+    {
+      "name": "identity",
+      "path": ".",
+      "tag": "v{version}",
+      "legacy_tags": ["{version}"],
+      "ignore": ["tests/**", "*.md", ".idea/**", "docs/**"]
+    }
+  ]
+}

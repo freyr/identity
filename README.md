@@ -65,6 +65,21 @@ $collection->toBinaryArray();
 
 All mutating methods return new instances.
 
+## Contributing
+
+All changes go through a pull request with a [Conventional Commits](https://www.conventionalcommits.org/) title. The PR is squash-merged, so its title becomes the commit on `main` and sets the next version:
+
+| PR title | Release |
+|---|---|
+| `feat: …` | minor |
+| `fix: …`, `perf: …`, `revert: …` | patch |
+| `feat!: …`, or `BREAKING CHANGE:` in the PR body | major |
+| `docs:`, `test:`, `ci:`, `build:`, `refactor:`, `chore:`, `style:` | none |
+
+A change only to tests, docs or Markdown files makes no release. After the merge, the release job pushes the tag `vX.Y.Z` and creates the GitHub release; Packagist picks up the tag. Do not create tags by hand. The [GitHub releases](https://github.com/freyr/identity/releases) are the changelog.
+
+Required checks: `pr-title`, `version` and `ci-gate`.
+
 ## Licence
 
 MIT

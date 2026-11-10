@@ -1,9 +1,19 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+> [!NOTE]
+> The [GitHub releases](https://github.com/freyr/identity/releases) hold the changelog of each release
+> after 1.0.1. The release job writes them from the PR titles. This file keeps only the history of the
+> older releases and gets no new entries.
+
+All notable changes up to version 1.0.1 are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 1.0.1 - 2026-03-01
+
+### Changed
+- Widened the `symfony/uid` constraint to `^6.4|^7.2`
 
 ## 1.0.0 - 2026-03-01
 
