@@ -12,7 +12,7 @@ use Symfony\Component\Uid\Ulid;
 /**
  * @phpstan-consistent-constructor
  */
-class Id
+class Id implements \Stringable
 {
     protected function __construct(
         protected Ulid $id,
