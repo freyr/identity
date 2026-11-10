@@ -24,6 +24,12 @@ Single-class library. Namespace: `Freyr\Identity\`. Source: `src/Id.php`.
 
 Cache directory: `cache/` (phpstan, ecs, phpunit).
 
+## Releases
+
+- PR titles follow Conventional Commits; the squash commit title sets the version (`feat` minor, `fix`/`perf` patch, `!` major, other types none).
+- The release workflow on `main` pushes `vX.Y.Z` and creates the GitHub release. Never create a tag by hand and never add entries to `CHANGELOG.md`.
+- Release config: `.github/release.json`. Required checks: `pr-title`, `version`, `ci-gate`; every new CI job goes into `ci-gate.needs`.
+
 ## Boundaries
 
 **ASK FIRST:**
