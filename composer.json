@@ -1,22 +1,24 @@
 {
     "name": "freyr/identity",
     "description": "A PHP library for Identity concept.",
-    "type": "library",
     "license": "MIT",
+    "type": "library",
     "require": {
-        "php": "^8.2 || ^8.3 || ^8.4",
+        "php": "^8.2",
         "symfony/polyfill-php84": "^1.31",
-        "symfony/uid": "^6.4|^7.2"
+        "symfony/uid": "^6.4 || ^7.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.0 || ^12.0",
         "ergebnis/composer-normalize": "^2.45",
+        "infection/infection": "^0.32.6 || ^0.35.10",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpstan/phpstan-symfony": "^2.0",
+        "phpunit/phpunit": "^11.0 || ^12.0",
+        "rector/rector": "^2.8",
         "symplify/easy-coding-standard": "^12.5 || ^13.0"
     },
     "autoload": {
@@ -30,15 +32,16 @@
         }
     },
     "config": {
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "optimize-autoloader": true,
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "ergebnis/composer-normalize": true,
+            "infection/extension-installer": true,
             "php-http/discovery": true,
             "phpstan/extension-installer": true
-        }
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     },
     "scripts": {
         "ecs": "vendor/bin/ecs check --fix",

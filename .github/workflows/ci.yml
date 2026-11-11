@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: PHP ${{ matrix.php }}
@@ -16,17 +23,19 @@ jobs:
         php: ['8.2', '8.3', '8.4']
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring
           coverage: none
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: php-${{ matrix.php }}-deps-${{ hashFiles('composer.json') }}
@@ -38,22 +47,99 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit --testdox
 
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    env:
+      MIN_COVERAGE: '100'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: pcov
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: vendor
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
+          restore-keys: php-8.4-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-clover cache/coverage/clover.xml --coverage-text --only-summary-for-coverage-text
+
+      - name: Check the line coverage floor
+        run: |
+          php <<'PHP'
+          <?php
+          $metrics = simplexml_load_file('cache/coverage/clover.xml')->project->metrics;
+          $total = (int) $metrics['statements'];
+          $percent = $total > 0 ? 100 * (int) $metrics['coveredstatements'] / $total : 100.0;
+          $minimum = (float) getenv('MIN_COVERAGE');
+          printf("Line coverage: %.2f%% (minimum %.2f%%)\n", $percent, $minimum);
+          if ($percent < $minimum) {
+              echo "::error::Line coverage {$percent}% is below the floor of {$minimum}%.\n";
+              exit(1);
+          }
+          PHP
+
+  infection:
+    name: Infection
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: pcov
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: vendor
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
+          restore-keys: php-8.4-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Infection
+        run: vendor/bin/infection --threads=max --no-progress --show-mutations=0
+
   phpstan:
     name: PHPStan
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: mbstring
           coverage: none
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: php-8.4-composer-${{ hashFiles('composer.json') }}
@@ -70,17 +156,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.4'
           extensions: mbstring
           coverage: none
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: vendor
           key: php-8.4-composer-${{ hashFiles('composer.json') }}
@@ -92,10 +180,74 @@ jobs:
       - name: Run ECS
         run: vendor/bin/ecs check
 
+  rector:
+    name: Rector
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: vendor
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
+          restore-keys: php-8.4-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Rector (dry run)
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+  composer:
+    name: Composer
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: vendor
+          key: php-8.4-composer-${{ hashFiles('composer.json') }}
+          restore-keys: php-8.4-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Validate composer.json
+        run: composer validate --strict --no-check-lock
+
+      - name: Check that composer.json is normalized
+        run: composer normalize --dry-run
+
+      - name: Audit dependencies
+        run: composer audit
+
   ci-gate:
     name: ci-gate
     if: always()
-    needs: [test, phpstan, ecs]
+    needs: [test, coverage, infection, phpstan, ecs, rector, composer]
     runs-on: ubuntu-latest
     steps:
       - uses: freyr/.github/actions/ci-gate@3f8fbbcf74283946ee3a7f63e21dd19bf02cdb77 # v1.0.0

@@ -15,14 +15,19 @@ PHP library providing `Id` value object wrapping monotonic ULID via symfony/uid.
 docker compose run --rm php vendor/bin/phpunit --testdox          # Tests
 docker compose run --rm php vendor/bin/phpstan --memory-limit=-1  # Static analysis
 docker compose run --rm php vendor/bin/ecs check --fix            # Code style
+docker compose run --rm php vendor/bin/rector process --dry-run   # PHP 8.2 upgrade rules
+docker compose run --rm php vendor/bin/infection --threads=max     # Mutation testing (minMsi 85)
 docker compose run --rm php sh                                    # Shell
+make qa                                                           # All CI checks (incl. coverage floor, composer normalize/audit)
 ```
+
+Line coverage floor is 100% (`MIN_COVERAGE` in `.github/workflows/ci.yml`); a new branch without a test fails CI.
 
 ## Architecture
 
 Single-class library. Namespace: `Freyr\Identity\`. Source: `src/Id.php`.
 
-Cache directory: `cache/` (phpstan, ecs, phpunit).
+Cache directory: `cache/` (phpstan, ecs, phpunit, infection, rector).
 
 ## Releases
 
