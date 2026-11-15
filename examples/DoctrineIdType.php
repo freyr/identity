@@ -42,6 +42,9 @@ use Freyr\Identity\Id;
  *     id BINARY(16) NOT NULL PRIMARY KEY
  * );
  *
+ * For a native UUID column (for example PostgreSQL `uuid`), store $value->toUuid() and read with
+ * Id::fromString(). Each Id from Id::new() is a valid UUID v7.
+ *
  * This type always creates the base class Id. An Id from the database is the same as a UserId
  * with the same ULID (sameAs()), but it is not equal to it (equalTo() also compares the class).
  * For a typed identifier, copy this class for each subclass and call UserId::fromBinary().
