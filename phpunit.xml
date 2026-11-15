@@ -6,6 +6,10 @@
          executionOrder="depends,defects"
          beStrictAboutOutputDuringTests="true"
          displayDetailsOnPhpunitDeprecations="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         failOnDeprecation="true"
+         failOnNotice="true"
          failOnPhpunitDeprecation="true"
          failOnRisky="true"
          failOnWarning="true">

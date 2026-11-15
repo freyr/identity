@@ -1,4 +1,4 @@
-FROM php:8.4-cli-alpine
+FROM php:8.5-cli-alpine
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PHP_CS_FIXER_IGNORE_ENV=1
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \
