@@ -6,11 +6,12 @@
     "tmpDir": "cache/infection",
     "logs": {
         "text": "cache/infection/infection.log",
-        "summary": "cache/infection/summary.log",
-        "github": true
+        "summary": "cache/infection/summary.log"
     },
-    "minMsi": 85,
-    "minCoveredMsi": 85,
+    // The measured value of the full run is 100% (57 mutants; one mutant is 1.75 points).
+    // The margin permits one escaped mutant. Raise these values only.
+    "minMsi": 98,
+    "minCoveredMsi": 98,
     "mutators": {
         "@default": true
     }

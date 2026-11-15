@@ -16,7 +16,7 @@ docker compose run --rm php vendor/bin/phpunit --testdox          # Tests
 docker compose run --rm php vendor/bin/phpstan --memory-limit=-1  # Static analysis
 docker compose run --rm php vendor/bin/ecs check --fix            # Code style
 docker compose run --rm php vendor/bin/rector process --dry-run   # PHP 8.2 upgrade rules
-docker compose run --rm php vendor/bin/infection --threads=max     # Mutation testing (minMsi 85)
+docker compose run --rm php vendor/bin/infection --threads=max     # Mutation testing (minMsi 98)
 docker compose run --rm php sh                                    # Shell
 make qa                                                           # All CI checks (incl. coverage floor, composer normalize/audit)
 ```

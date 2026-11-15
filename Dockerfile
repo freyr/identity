@@ -4,6 +4,7 @@ ENV PHP_CS_FIXER_IGNORE_ENV=1
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \
     && pecl install pcov \
     && docker-php-ext-enable pcov \
+    && printf 'pcov.directory=/app/src\n' > /usr/local/etc/php/conf.d/zz-pcov.ini \
     && apk del .build-deps
 COPY --from=composer/composer:2-bin /composer /usr/bin/composer
 WORKDIR /app

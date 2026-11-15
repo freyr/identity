@@ -7,9 +7,11 @@ namespace Freyr\Identity\Tests;
 use Freyr\Identity\Id;
 use Freyr\Identity\Tests\Fixtures\OrderId;
 use Freyr\Identity\Tests\Fixtures\UserId;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(Id::class)]
 final class IdTest extends TestCase
 {
     /**
