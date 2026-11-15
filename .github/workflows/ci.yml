@@ -47,6 +47,31 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit --testdox
 
+  lowest:
+    name: PHP 8.2 (lowest dependencies)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.2'
+          extensions: mbstring
+          coverage: none
+
+      - name: Install the lowest dependency versions
+        run: composer update --no-interaction --prefer-dist --prefer-lowest --prefer-stable
+
+      - name: Show the installed versions
+        run: composer show --direct
+
+      - name: Run tests
+        run: vendor/bin/phpunit --testdox
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -247,7 +272,7 @@ jobs:
   ci-gate:
     name: ci-gate
     if: always()
-    needs: [test, coverage, infection, phpstan, ecs, rector, composer]
+    needs: [test, lowest, coverage, infection, phpstan, ecs, rector, composer]
     runs-on: ubuntu-latest
     steps:
       - uses: freyr/.github/actions/ci-gate@631e66e10bce4839aec46f7e71ed36f6c8017b16 # v1.0.1
