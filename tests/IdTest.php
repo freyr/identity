@@ -140,6 +140,51 @@ final class IdTest extends TestCase
         self::assertFalse($id1->sameAs($id2));
     }
 
+    public function testSameAsIgnoresTheClassOfTheIds(): void
+    {
+        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $orderId = OrderIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
+        self::assertTrue($userId->sameAs($orderId));
+        self::assertTrue($userId->sameAs($id));
+        self::assertTrue($id->sameAs($userId));
+    }
+
+    public function testEqualToReturnsTrueForTheSameClassAndTheSameValue(): void
+    {
+        $id1 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $id2 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
+        self::assertTrue($id1->equalTo($id2));
+    }
+
+    public function testEqualToReturnsFalseForTheSameClassAndADifferentValue(): void
+    {
+        $id1 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $id2 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAW');
+
+        self::assertFalse($id1->equalTo($id2));
+    }
+
+    public function testEqualToReturnsFalseForADifferentSubclassAndTheSameValue(): void
+    {
+        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $orderId = OrderIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
+        self::assertFalse($userId->equalTo($orderId));
+        self::assertFalse($orderId->equalTo($userId));
+    }
+
+    public function testEqualToReturnsFalseBetweenTheBaseClassAndASubclass(): void
+    {
+        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
+        self::assertFalse($id->equalTo($userId));
+        self::assertFalse($userId->equalTo($id));
+    }
+
     public function testSubclassFactoryReturnsSubclassInstance(): void
     {
         $userId = UserIdStub::new();
@@ -161,3 +206,8 @@ final class IdTest extends TestCase
  * Test stub for subclass behavior.
  */
 class UserIdStub extends Id {}
+
+/**
+ * Second test stub, to compare identifiers of different classes.
+ */
+class OrderIdStub extends Id {}

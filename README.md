@@ -25,16 +25,26 @@ $id = Id::fromBinary($bytes);
 
 (string) $id;    // ULID string (26 chars, Crockford Base32)
 $id->toBinary(); // 16-byte binary
-$id->sameAs($other);
+$id->sameAs($other);  // same ULID; the class is not compared
+$id->equalTo($other); // same ULID and same class
 ```
+
+Create an `Id` with `new()`, `fromString()` or `fromBinary()`. The constructor is private.
 
 Extend for typed identifiers.
 
 ```php
 class UserId extends Id {}
+class OrderId extends Id {}
 
 $userId = UserId::new();
+$orderId = OrderId::fromString((string) $userId);
+
+$userId->sameAs($orderId);  // true
+$userId->equalTo($orderId); // false
 ```
+
+A subclass cannot define a constructor or read the internal ULID.
 
 ### IdCollection
 
