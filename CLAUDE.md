@@ -38,7 +38,8 @@ Cache directory: `cache/` (phpstan, ecs, phpunit, infection, rector).
 ## Releases
 
 - PR titles follow Conventional Commits; the squash commit title sets the version (`feat` minor, `fix`/`perf` patch, `!` major, other types none).
-- **Every release is a patch or a minor release, also for a breaking change.** Never put `!` in a PR title or `BREAKING CHANGE:` in a PR body without the explicit approval of the owner; state a breaking change in the PR description instead.
+- **A breaking change is always a major release** (`!` in the PR title or `BREAKING CHANGE:` in the PR body), never a minor or a patch release. The library is on a stable major version, so the 0.x rule "a minor release can break" does not apply. Breaking: a removed or renamed method, a narrower visibility (also of a protected member), a changed signature, or a different result for the same input.
+- **A major release needs the explicit approval of the owner.** When a change is breaking, stop and ask before you open the PR; do not relabel it as `feat:`.
 - The release workflow on `main` pushes `vX.Y.Z` and creates the GitHub release. Never create a tag by hand and never add entries to `CHANGELOG.md`.
 - Release config: `.github/release.json`. Required checks: `pr-title`, `version`, `ci-gate`; every new CI job goes into `ci-gate.needs`.
 

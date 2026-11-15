@@ -10,6 +10,12 @@ use Symfony\Component\Uid\NilUlid;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Uid\UuidV7;
 
+/**
+ * A 128-bit identifier, kept as one ULID.
+ *
+ * The constructor and the ULID are private since version 2.0: create an identifier with new(), fromString()
+ * or fromBinary(). A typed identifier is an empty subclass.
+ */
 class Id implements \Stringable
 {
     final private function __construct(
