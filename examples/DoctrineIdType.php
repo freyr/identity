@@ -9,18 +9,17 @@ use Doctrine\DBAL\Types\Type;
 use Freyr\Identity\Id;
 
 /**
- * Example Doctrine custom type for storing Id as binary ULID in the database.
+ * Example Doctrine DBAL 4 type that stores an Id as 16 bytes.
  *
- * This example demonstrates compatibility with the Id class contract.
- * The Id class provides all necessary methods:
- * - Id::fromBinary(string): static  -> for hydration from database
- * - toBinary(): string              -> for persistence to database
+ * The type uses only the public contract of Id:
+ * - Id::fromBinary(string): static  -> from the database value
+ * - toBinary(): string              -> to the database value
  *
  * Installation:
- * 1. composer require doctrine/dbal
+ * 1. composer require doctrine/dbal:^4.0
  * 2. Copy this file to your project (e.g., src/Infrastructure/Doctrine/Type/IdType.php)
  * 3. Register the type:
- *    Type::addType('freyr_identity', IdType::class);
+ *    Type::addType(DoctrineIdType::NAME, DoctrineIdType::class);
  * 4. Use in your entities:
  *
  *    use Doctrine\ORM\Mapping as ORM;
@@ -40,8 +39,12 @@ use Freyr\Identity\Id;
  *
  * Database schema (MySQL):
  * CREATE TABLE user (
- *     id BINARY(16) NOT NULL PRIMARY KEY COMMENT '(DC2Type:freyr_identity)'
+ *     id BINARY(16) NOT NULL PRIMARY KEY
  * );
+ *
+ * This type always creates the base class Id. An Id from the database is the same as a UserId
+ * with the same ULID (sameAs()), but it is not equal to it (equalTo() also compares the class).
+ * For a typed identifier, copy this class for each subclass and call UserId::fromBinary().
  */
 final class DoctrineIdType extends Type
 {
@@ -55,11 +58,7 @@ final class DoctrineIdType extends Type
         ]);
     }
 
-    /**
-     * Converts database binary value to Id object.
-     * Uses Id::fromBinary() - compatible with existing contract.
-     */
-    public function convertToPHPValue($value, AbstractPlatform $platform): ?Id
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Id
     {
         if ($value === null) {
             return null;
@@ -73,15 +72,10 @@ final class DoctrineIdType extends Type
             throw new \InvalidArgumentException('Expected string for Id conversion, got ' . get_debug_type($value));
         }
 
-        // Uses public static factory method - no private property access needed
         return Id::fromBinary($value);
     }
 
-    /**
-     * Converts Id object to database binary value.
-     * Uses toBinary() method - compatible with existing contract.
-     */
-    public function convertToDatabaseValue($value, AbstractPlatform $platform): ?string
+    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
     {
         if ($value === null) {
             return null;
@@ -91,17 +85,6 @@ final class DoctrineIdType extends Type
             throw new \InvalidArgumentException('Expected Id instance, got ' . get_debug_type($value));
         }
 
-        // Uses public method - no private property access needed
         return $value->toBinary();
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
-    {
-        return true;
     }
 }

@@ -1,13 +1,14 @@
 # Freyr Identity
 
-PHP library providing `Id` value object wrapping monotonic ULID via symfony/uid. Thin adapter for domain identifiers.
+PHP library providing the `Id` value object, which wraps a monotonic ULID via symfony/uid, and `IdCollection`, an immutable list of `Id` objects.
 
 ## Critical Rules
 
-- **ID001**: Constructor is private — use factory methods: `Id::new()`, `Id::fromBinary()`, `Id::fromString()`.
-- **ID002**: `Id` is immutable with final methods — no inheritance.
-- **ID003**: Equality via `sameAs()`, not `===`.
-- **ID004**: PHPStan max level with bleeding edge + all strict rules.
+- **ID001**: The `Id` constructor is `final private` — use the factory methods: `Id::new()`, `Id::fromBinary()`, `Id::fromString()`.
+- **ID002**: `Id` is immutable (`private readonly` ULID). Typed identifiers are empty subclasses (`class UserId extends Id {}`); a subclass cannot define a constructor or read the ULID.
+- **ID003**: Equality via `sameAs()` (value only, ignores the class) or `equalTo()` (value and class), not `===`.
+- **ID004**: PHPStan max level with bleeding edge + all strict rules, on `src/` and `tests/`.
+- **ID005**: Tests assert exact literal values (no expected value computed by the code under test) and carry `#[CoversClass]`. Fixtures live in `tests/Fixtures/`.
 
 ## Commands
 
@@ -23,15 +24,20 @@ make qa                                                           # All CI check
 
 Line coverage floor is 100% (`MIN_COVERAGE` in `.github/workflows/ci.yml`); a new branch without a test fails CI.
 
+The Infection thresholds (`minMsi`, `minCoveredMsi` in `infection.json5`) only go up. Kill an escaped mutant with a test of observable behavior, or record why it is equivalent.
+
+CI tests PHP 8.2 to 8.5, and PHP 8.2 with the lowest dependency versions. The dev image and the tool jobs use PHP 8.5.
+
 ## Architecture
 
-Single-class library. Namespace: `Freyr\Identity\`. Source: `src/Id.php`.
+Namespace: `Freyr\Identity\`. Source: `src/Id.php`, `src/IdCollection.php`. `examples/` holds a Doctrine DBAL type that no tool checks (`doctrine/dbal` is not a dependency).
 
 Cache directory: `cache/` (phpstan, ecs, phpunit, infection, rector).
 
 ## Releases
 
 - PR titles follow Conventional Commits; the squash commit title sets the version (`feat` minor, `fix`/`perf` patch, `!` major, other types none).
+- **Every release is a patch or a minor release, also for a breaking change.** Never put `!` in a PR title or `BREAKING CHANGE:` in a PR body without the explicit approval of the owner; state a breaking change in the PR description instead.
 - The release workflow on `main` pushes `vX.Y.Z` and creates the GitHub release. Never create a tag by hand and never add entries to `CHANGELOG.md`.
 - Release config: `.github/release.json`. Required checks: `pr-title`, `version`, `ci-gate`; every new CI job goes into `ci-gate.needs`.
 
