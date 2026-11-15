@@ -140,15 +140,37 @@ final class IdTest extends TestCase
         self::assertFalse($id1->sameAs($id2));
     }
 
-    public function testSameAsIgnoresTheClassOfTheIds(): void
+    public function testSameAsReturnsTrueForDifferentSubclassesWithTheSameValue(): void
     {
         $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
         $orderId = OrderIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
 
         self::assertTrue($userId->sameAs($orderId));
+    }
+
+    public function testSameAsReturnsTrueBetweenTheBaseClassAndASubclassWithTheSameValue(): void
+    {
+        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
         self::assertTrue($userId->sameAs($id));
         self::assertTrue($id->sameAs($userId));
+    }
+
+    public function testTheConstructorIsPrivateAndFinal(): void
+    {
+        $constructor = new \ReflectionMethod(Id::class, '__construct');
+
+        self::assertTrue($constructor->isPrivate());
+        self::assertTrue($constructor->isFinal());
+    }
+
+    public function testEqualToReturnsTrueForTwoBaseClassIdsWithTheSameValue(): void
+    {
+        $id1 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $id2 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+
+        self::assertTrue($id1->equalTo($id2));
     }
 
     public function testEqualToReturnsTrueForTheSameClassAndTheSameValue(): void
