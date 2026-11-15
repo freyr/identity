@@ -5,156 +5,211 @@ declare(strict_types=1);
 namespace Freyr\Identity\Tests;
 
 use Freyr\Identity\Id;
+use Freyr\Identity\Tests\Fixtures\OrderId;
+use Freyr\Identity\Tests\Fixtures\UserId;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class IdTest extends TestCase
 {
-    public function testNewReturnsIdInstance(): void
-    {
-        $id = Id::new();
+    /**
+     * One identifier in its three forms. The hex and UUID forms were calculated by hand from the ULID.
+     */
+    private const ULID = '01ARYZ6S41TSV4RRFFQ69G5FAV';
 
-        self::assertInstanceOf(Id::class, $id);
+    private const HEX = '01563df36481d6764c61efb99302bd5b';
+
+    private const UUID = '01563df3-6481-d676-4c61-efb99302bd5b';
+
+    private const OTHER_ULID = '01ARYZ6S41TSV4RRFFQ69G5FAW';
+
+    private const NIL_AND_MAX_MESSAGE = '/^NIL and MAX ULIDs are not valid identifiers\.$/';
+
+    public function testNewCreatesA26CharacterCrockfordBase32String(): void
+    {
+        self::assertMatchesRegularExpression('/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/', (string) Id::new());
     }
 
-    public function testTwoNewCallsProduceDifferentIds(): void
+    public function testNewCreatesUniqueIdsInAscendingOrder(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $ids = [];
+        for ($i = 0; $i < 1000; ++$i) {
+            $ids[] = (string) Id::new();
+        }
 
-        self::assertFalse($id1->sameAs($id2));
+        $expected = array_unique($ids);
+        sort($expected, SORT_STRING);
+
+        self::assertSame($expected, $ids);
     }
 
-    public function testToStringReturnsCrockfordBase32Format(): void
+    #[DataProvider('provideAcceptedStringFormats')]
+    public function testFromStringConvertsEachAcceptedFormatToTheSameUlid(string $input): void
     {
-        $id = Id::new();
-        $string = (string) $id;
-
-        self::assertSame(26, strlen($string));
-        self::assertMatchesRegularExpression('/^[0-9A-HJKMNP-TV-Z]{26}$/', $string);
+        self::assertSame(self::ULID, (string) Id::fromString($input));
     }
 
-    public function testToBinaryReturns16Bytes(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideAcceptedStringFormats(): iterable
     {
-        $id = Id::new();
-
-        self::assertSame(16, strlen($id->toBinary()));
+        yield 'a ULID' => [self::ULID];
+        yield 'a ULID in lowercase' => ['01aryz6s41tsv4rrffq69g5fav'];
+        yield 'a UUID' => [self::UUID];
+        yield 'a UUID in uppercase' => ['01563DF3-6481-D676-4C61-EFB99302BD5B'];
+        yield 'a base58 string' => ['1AaLsH1SUNAUK3dNDbnPwY'];
+        yield '16 bytes' => ["\x01\x56\x3d\xf3\x64\x81\xd6\x76\x4c\x61\xef\xb9\x93\x02\xbd\x5b"];
     }
 
-    public function testStringRoundTrip(): void
-    {
-        $id = Id::new();
-        $restored = Id::fromString((string) $id);
-
-        self::assertTrue($id->sameAs($restored));
-    }
-
-    public function testBinaryRoundTrip(): void
-    {
-        $id = Id::new();
-        $restored = Id::fromBinary($id->toBinary());
-
-        self::assertTrue($id->sameAs($restored));
-    }
-
-    public function testFromStringWithValidUlid(): void
-    {
-        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-
-        self::assertSame('01ARYZ6S41TSV4RRFFQ69G5FAV', (string) $id);
-    }
-
-    public function testFromStringWithUuidFormatAutoConverts(): void
-    {
-        $id = Id::fromString('01920a7c-8b00-7000-8000-000000000001');
-
-        self::assertSame(26, strlen((string) $id));
-        self::assertSame(16, strlen($id->toBinary()));
-
-        $restored = Id::fromString((string) $id);
-        self::assertTrue($id->sameAs($restored));
-    }
-
-    public function testFromStringWithEmptyStringThrows(): void
+    #[DataProvider('provideInvalidStrings')]
+    public function testFromStringRejectsAStringThatIsNotAnIdentifier(string $input): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/^Invalid ULID/');
 
-        Id::fromString('');
+        Id::fromString($input);
     }
 
-    public function testFromStringWithInvalidInputThrows(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideInvalidStrings(): iterable
+    {
+        yield 'an empty string' => [''];
+        yield 'text' => ['not-a-valid-id'];
+        yield '25 characters' => ['01ARYZ6S41TSV4RRFFQ69G5FA'];
+        yield 'a ULID above the maximum' => ['8ZZZZZZZZZZZZZZZZZZZZZZZZZ'];
+        yield '32 hex characters' => [self::HEX];
+    }
+
+    #[DataProvider('provideNilAndMaxStrings')]
+    public function testFromStringRejectsTheNilAndMaxValues(string $input): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches(self::NIL_AND_MAX_MESSAGE);
 
-        Id::fromString('not-a-valid-id');
+        Id::fromString($input);
     }
 
-    public function testFromBinaryWithInvalidLengthThrows(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideNilAndMaxStrings(): iterable
+    {
+        yield 'the NIL ULID' => ['00000000000000000000000000'];
+        yield 'the MAX ULID' => ['7ZZZZZZZZZZZZZZZZZZZZZZZZZ'];
+        yield 'the NIL UUID' => ['00000000-0000-0000-0000-000000000000'];
+        yield 'the MAX UUID' => ['ffffffff-ffff-ffff-ffff-ffffffffffff'];
+    }
+
+    public function testFromBinaryCreatesTheIdOfThe16Bytes(): void
+    {
+        $id = Id::fromBinary("\x01\x56\x3d\xf3\x64\x81\xd6\x76\x4c\x61\xef\xb9\x93\x02\xbd\x5b");
+
+        self::assertSame(self::ULID, (string) $id);
+    }
+
+    #[DataProvider('provideBinaryStringsOfTheWrongLength')]
+    public function testFromBinaryRejectsAStringThatIsNot16Bytes(string $bytes): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/^Invalid binary uid provided\.$/');
 
-        Id::fromBinary('short');
+        Id::fromBinary($bytes);
     }
 
-    public function testFromStringRejectsNilUlid(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideBinaryStringsOfTheWrongLength(): iterable
+    {
+        yield 'an empty string' => [''];
+        yield '15 bytes' => [str_repeat('a', 15)];
+        yield '17 bytes' => [str_repeat('a', 17)];
+    }
+
+    #[DataProvider('provideNilAndMaxBytes')]
+    public function testFromBinaryRejectsTheNilAndMaxValues(string $bytes): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches(self::NIL_AND_MAX_MESSAGE);
 
-        Id::fromString('00000000000000000000000000');
+        Id::fromBinary($bytes);
     }
 
-    public function testFromStringRejectsMaxUlid(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideNilAndMaxBytes(): iterable
     {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Id::fromString('7ZZZZZZZZZZZZZZZZZZZZZZZZZ');
+        yield '16 zero bytes' => [str_repeat("\x00", 16)];
+        yield '16 bytes of 0xFF' => [str_repeat("\xFF", 16)];
     }
 
-    public function testFromBinaryRejectsNilBinary(): void
+    public function testToBinaryReturnsThe16BytesOfTheUlid(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Id::fromBinary(str_repeat("\x00", 16));
+        self::assertSame(self::HEX, bin2hex(Id::fromString(self::ULID)->toBinary()));
     }
 
-    public function testFromBinaryRejectsMaxBinary(): void
+    public function testSameAsReturnsTrueForTwoIdsWithTheSameValue(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Id::fromBinary(str_repeat("\xFF", 16));
+        self::assertTrue(Id::fromString(self::ULID)->sameAs(Id::fromString(self::UUID)));
     }
 
-    public function testSameAsReturnsTrueForEqualIds(): void
+    public function testSameAsReturnsFalseForTwoIdsWithDifferentValues(): void
     {
-        $string = '01ARYZ6S41TSV4RRFFQ69G5FAV';
-        $id1 = Id::fromString($string);
-        $id2 = Id::fromString($string);
-
-        self::assertTrue($id1->sameAs($id2));
-    }
-
-    public function testSameAsReturnsFalseForDifferentIds(): void
-    {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        self::assertFalse($id1->sameAs($id2));
+        self::assertFalse(Id::fromString(self::ULID)->sameAs(Id::fromString(self::OTHER_ULID)));
     }
 
     public function testSameAsReturnsTrueForDifferentSubclassesWithTheSameValue(): void
     {
-        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $orderId = OrderIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $userId = UserId::fromString(self::ULID);
+        $orderId = OrderId::fromString(self::ULID);
 
         self::assertTrue($userId->sameAs($orderId));
     }
 
     public function testSameAsReturnsTrueBetweenTheBaseClassAndASubclassWithTheSameValue(): void
     {
-        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+        $id = Id::fromString(self::ULID);
+        $userId = UserId::fromString(self::ULID);
 
         self::assertTrue($userId->sameAs($id));
         self::assertTrue($id->sameAs($userId));
+    }
+
+    public function testEqualToReturnsTrueForTwoBaseClassIdsWithTheSameValue(): void
+    {
+        self::assertTrue(Id::fromString(self::ULID)->equalTo(Id::fromString(self::ULID)));
+    }
+
+    public function testEqualToReturnsTrueForTheSameSubclassAndTheSameValue(): void
+    {
+        self::assertTrue(UserId::fromString(self::ULID)->equalTo(UserId::fromString(self::ULID)));
+    }
+
+    public function testEqualToReturnsFalseForTheSameSubclassAndADifferentValue(): void
+    {
+        self::assertFalse(UserId::fromString(self::ULID)->equalTo(UserId::fromString(self::OTHER_ULID)));
+    }
+
+    public function testEqualToReturnsFalseForADifferentSubclassAndTheSameValue(): void
+    {
+        $userId = UserId::fromString(self::ULID);
+        $orderId = OrderId::fromString(self::ULID);
+
+        self::assertFalse($userId->equalTo($orderId));
+        self::assertFalse($orderId->equalTo($userId));
+    }
+
+    public function testEqualToReturnsFalseBetweenTheBaseClassAndASubclass(): void
+    {
+        $id = Id::fromString(self::ULID);
+        $userId = UserId::fromString(self::ULID);
+
+        self::assertFalse($id->equalTo($userId));
+        self::assertFalse($userId->equalTo($id));
     }
 
     public function testTheConstructorIsPrivateAndFinal(): void
@@ -164,72 +219,4 @@ final class IdTest extends TestCase
         self::assertTrue($constructor->isPrivate());
         self::assertTrue($constructor->isFinal());
     }
-
-    public function testEqualToReturnsTrueForTwoBaseClassIdsWithTheSameValue(): void
-    {
-        $id1 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $id2 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-
-        self::assertTrue($id1->equalTo($id2));
-    }
-
-    public function testEqualToReturnsTrueForTheSameClassAndTheSameValue(): void
-    {
-        $id1 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $id2 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-
-        self::assertTrue($id1->equalTo($id2));
-    }
-
-    public function testEqualToReturnsFalseForTheSameClassAndADifferentValue(): void
-    {
-        $id1 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $id2 = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAW');
-
-        self::assertFalse($id1->equalTo($id2));
-    }
-
-    public function testEqualToReturnsFalseForADifferentSubclassAndTheSameValue(): void
-    {
-        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $orderId = OrderIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-
-        self::assertFalse($userId->equalTo($orderId));
-        self::assertFalse($orderId->equalTo($userId));
-    }
-
-    public function testEqualToReturnsFalseBetweenTheBaseClassAndASubclass(): void
-    {
-        $id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-        $userId = UserIdStub::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
-
-        self::assertFalse($id->equalTo($userId));
-        self::assertFalse($userId->equalTo($id));
-    }
-
-    public function testSubclassFactoryReturnsSubclassInstance(): void
-    {
-        $userId = UserIdStub::new();
-
-        self::assertInstanceOf(UserIdStub::class, $userId);
-    }
-
-    public function testSubclassRoundTrip(): void
-    {
-        $userId = UserIdStub::new();
-        $restored = UserIdStub::fromString((string) $userId);
-
-        self::assertInstanceOf(UserIdStub::class, $restored);
-        self::assertTrue($userId->sameAs($restored));
-    }
 }
-
-/**
- * Test stub for subclass behavior.
- */
-class UserIdStub extends Id {}
-
-/**
- * Second test stub, to compare identifiers of different classes.
- */
-class OrderIdStub extends Id {}
