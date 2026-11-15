@@ -32,6 +32,19 @@ final class IdTest extends TestCase
         self::assertMatchesRegularExpression('/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/', (string) Id::new());
     }
 
+    public function testNewCreatesIdsThatAreValidVersion7Uuids(): void
+    {
+        $uuids = [];
+        for ($i = 0; $i < 100; ++$i) {
+            $uuids[] = Id::new()->toUuid();
+        }
+
+        $pattern = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/';
+        $version7 = array_filter($uuids, static fn (string $uuid): bool => preg_match($pattern, $uuid) === 1);
+
+        self::assertCount(100, $version7);
+    }
+
     public function testNewCreatesUniqueIdsInAscendingOrder(): void
     {
         $ids = [];
@@ -152,6 +165,11 @@ final class IdTest extends TestCase
     public function testToBinaryReturnsThe16BytesOfTheUlid(): void
     {
         self::assertSame(self::HEX, bin2hex(Id::fromString(self::ULID)->toBinary()));
+    }
+
+    public function testToUuidReturnsTheRfc4122FormOfTheSameBits(): void
+    {
+        self::assertSame(self::UUID, Id::fromString(self::ULID)->toUuid());
     }
 
     public function testSameAsReturnsTrueForTwoIdsWithTheSameValue(): void

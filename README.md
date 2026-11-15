@@ -1,6 +1,6 @@
 # Freyr Identity
 
-Monotonic ULID identity objects for PHP domain models. Provides an immutable `Id` value object and an `IdCollection` for working with sets of identifiers.
+Monotonic identity objects for PHP domain models, readable as a ULID and as a UUID v7. Provides an immutable `Id` value object and an `IdCollection` for working with sets of identifiers.
 
 ## Installation
 
@@ -20,16 +20,26 @@ Create, convert and compare identifiers.
 use Freyr\Identity\Id;
 
 $id = Id::new();
-$id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');
+$id = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FAV');                   // ULID string
+$id = Id::fromString('01563df3-6481-d676-4c61-efb99302bd5b');         // UUID string
 $id = Id::fromBinary($bytes);
 
 (string) $id;    // ULID string (26 chars, Crockford Base32)
+$id->toUuid();   // UUID string (36 chars, RFC 4122)
 $id->toBinary(); // 16-byte binary
-$id->sameAs($other);  // same ULID; the class is not compared
-$id->equalTo($other); // same ULID and same class
+$id->sameAs($other);  // same 128 bits; the class is not compared
+$id->equalTo($other); // same 128 bits and same class
 ```
 
 Create an `Id` with `new()`, `fromString()` or `fromBinary()`. The constructor is private.
+
+#### ULID and UUID v7
+
+An `Id` holds 128 bits. The ULID string, the UUID string and the binary form are three views of the same bits, and `sameAs()` compares the bits: an `Id` from a ULID string is the same as an `Id` from the UUID string of that ULID.
+
+`Id::new()` creates the bits in the UUID v7 layout. The result is a valid ULID and a valid UUID v7 at the same time, with the same timestamp and the same monotonic order in the two forms. Store it as `BINARY(16)` with `toBinary()`, or in a `uuid` column with `toUuid()`.
+
+`fromString()` detects the format and accepts a ULID string or a UUID string of any version. An identifier that was not created in the UUID v7 layout — an `Id` from version 1.2 or earlier of this library, or a plain ULID from another source — still has a `toUuid()` form that a database accepts, but that form is not a valid UUID v7.
 
 Extend for typed identifiers.
 

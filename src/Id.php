@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Symfony\Component\Uid\MaxUlid;
 use Symfony\Component\Uid\NilUlid;
 use Symfony\Component\Uid\Ulid;
+use Symfony\Component\Uid\UuidV7;
 
 class Id implements \Stringable
 {
@@ -19,9 +20,12 @@ class Id implements \Stringable
         }
     }
 
+    /**
+     * Creates the 128 bits in the UUID v7 layout, so that the identifier is a valid ULID and a valid UUID v7.
+     */
     final public static function new(): static
     {
-        return new static(new Ulid());
+        return new static(Ulid::fromBinary((new UuidV7())->toBinary()));
     }
 
     final public static function fromBinary(string $bytes): static
@@ -44,6 +48,14 @@ class Id implements \Stringable
     public function toBinary(): string
     {
         return $this->id->toBinary();
+    }
+
+    /**
+     * The RFC 4122 form of the same 128 bits. It is a valid UUID v7 for each identifier from new().
+     */
+    public function toUuid(): string
+    {
+        return $this->id->toRfc4122();
     }
 
     /**

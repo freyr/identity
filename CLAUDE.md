@@ -6,7 +6,8 @@ PHP library providing the `Id` value object, which wraps a monotonic ULID via sy
 
 - **ID001**: The `Id` constructor is `final private` — use the factory methods: `Id::new()`, `Id::fromBinary()`, `Id::fromString()`.
 - **ID002**: `Id` is immutable (`private readonly` ULID). Typed identifiers are empty subclasses (`class UserId extends Id {}`); a subclass cannot define a constructor or read the ULID.
-- **ID003**: Equality via `sameAs()` (value only, ignores the class) or `equalTo()` (value and class), not `===`.
+- **ID003**: Equality via `sameAs()` (the 128 bits only, ignores the class) or `equalTo()` (the 128 bits and the class), not `===`.
+- **ID006**: One internal form: a ULID. `Id::new()` creates the bits in the UUID v7 layout, so each new `Id` is a valid ULID and a valid UUID v7. `__toString()` gives the ULID, `toUuid()` the UUID, `toBinary()` the 16 bytes. Never add a second internal type or a ULID/UUID "kind".
 - **ID004**: PHPStan max level with bleeding edge + all strict rules, on `src/` and `tests/`.
 - **ID005**: Tests assert exact literal values (no expected value computed by the code under test) and carry `#[CoversClass]`. Fixtures live in `tests/Fixtures/`.
 
