@@ -116,9 +116,7 @@ class IdCollection implements Countable, IteratorAggregate
 
     public function merge(self $other): self
     {
-        $array = [...$this->ids, ...$other->ids];
-
-        return new self(array_values($array));
+        return new self([...$this->ids, ...$other->ids]);
     }
 
     public function intersect(self $other): self

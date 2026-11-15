@@ -6,362 +6,338 @@ namespace Freyr\Identity\Tests;
 
 use Freyr\Identity\Id;
 use Freyr\Identity\IdCollection;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class IdCollectionTest extends TestCase
 {
-    public function testFromArrayCreatesCollection(): void
+    private const A = '01ARYZ6S41TSV4RRFFQ69G5FA1';
+
+    private const B = '01ARYZ6S41TSV4RRFFQ69G5FA2';
+
+    private const C = '01ARYZ6S41TSV4RRFFQ69G5FA3';
+
+    private const D = '01ARYZ6S41TSV4RRFFQ69G5FA4';
+
+    public function testFromArrayKeepsTheOrderOfTheIds(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $collection = self::collection(self::C, self::A, self::B);
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
-
-        self::assertCount(2, $collection);
-        self::assertTrue($collection->contains($id1));
-        self::assertTrue($collection->contains($id2));
+        self::assertSame([self::C, self::A, self::B], $collection->toStringArray());
     }
 
-    public function testEmptyCreatesEmptyCollection(): void
+    public function testFromArrayReindexesTheKeys(): void
+    {
+        $collection = IdCollection::fromArray([
+            5 => Id::fromString(self::A),
+            10 => Id::fromString(self::B),
+        ]);
+
+        self::assertSame([self::A, self::B], $collection->toStringArray());
+    }
+
+    public function testFromArrayKeepsDuplicates(): void
+    {
+        $collection = self::collection(self::A, self::A);
+
+        self::assertSame([self::A, self::A], $collection->toStringArray());
+    }
+
+    public function testEmptyCreatesACollectionWithNoIds(): void
     {
         $collection = IdCollection::empty();
 
+        self::assertSame([], $collection->toArray());
         self::assertCount(0, $collection);
-        self::assertTrue($collection->isEmpty());
     }
 
-    public function testAddAddsIdToCollection(): void
+    public function testAddAppendsTheIdAtTheEnd(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $collection = self::collection(self::B, self::A)->add(Id::fromString(self::C));
 
-        $collection = IdCollection::empty()
-            ->add($id1)
-            ->add($id2);
-
-        self::assertCount(2, $collection);
-        self::assertTrue($collection->contains($id1));
-        self::assertTrue($collection->contains($id2));
+        self::assertSame([self::B, self::A, self::C], $collection->toStringArray());
     }
 
-    public function testAddIsImmutable(): void
+    public function testAddDoesNotChangeTheOriginalCollection(): void
     {
-        $id = Id::new();
-        $collection1 = IdCollection::empty();
-        $collection2 = $collection1->add($id);
+        $original = self::collection(self::A);
 
-        self::assertCount(0, $collection1);
-        self::assertCount(1, $collection2);
+        $original->add(Id::fromString(self::B));
+
+        self::assertSame([self::A], $original->toStringArray());
     }
 
-    public function testRemoveRemovesIdFromCollection(): void
-    {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
+    /**
+     * @param list<string> $ids
+     * @param list<string> $expected
+     */
+    #[DataProvider('provideRemoveCases')]
+    public function testRemoveReturnsTheIdsThatAreNotTheSameAsTheGivenId(
+        array $ids,
+        string $removed,
+        array $expected,
+    ): void {
+        $collection = self::collection(...$ids)->remove(Id::fromString($removed));
 
-        $collection = IdCollection::fromArray([$id1, $id2, $id3])
-            ->remove($id2);
-
-        self::assertCount(2, $collection);
-        self::assertTrue($collection->contains($id1));
-        self::assertFalse($collection->contains($id2));
-        self::assertTrue($collection->contains($id3));
+        self::assertSame($expected, $collection->toStringArray());
     }
 
-    public function testRemoveIsImmutable(): void
+    /**
+     * @return iterable<string, array{list<string>, string, list<string>}>
+     */
+    public static function provideRemoveCases(): iterable
     {
-        $id = Id::new();
-        $collection1 = IdCollection::fromArray([$id]);
-        $collection2 = $collection1->remove($id);
-
-        self::assertCount(1, $collection1);
-        self::assertCount(0, $collection2);
+        yield 'the first id' => [[self::A, self::B, self::C], self::A, [self::B, self::C]];
+        yield 'an id in the middle' => [[self::A, self::B, self::C], self::B, [self::A, self::C]];
+        yield 'the last id' => [[self::A, self::B, self::C], self::C, [self::A, self::B]];
+        yield 'an id that is not in the collection' => [[self::A, self::B], self::D, [self::A, self::B]];
+        yield 'each copy of a duplicate' => [[self::A, self::B, self::A], self::A, [self::B]];
+        yield 'the only id' => [[self::A], self::A, []];
+        yield 'an id from an empty collection' => [[], self::A, []];
     }
 
-    public function testContainsReturnsTrueWhenIdExists(): void
+    public function testRemoveOfTheFirstIdMakesTheSecondIdTheFirst(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $collection = self::collection(self::A, self::B)->remove(Id::fromString(self::A));
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
-
-        self::assertTrue($collection->contains($id1));
-        self::assertTrue($collection->contains($id2));
+        self::assertSame(self::B, (string) $collection->first());
     }
 
-    public function testContainsReturnsFalseWhenIdDoesNotExist(): void
+    public function testRemoveDoesNotChangeTheOriginalCollection(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
+        $original = self::collection(self::A, self::B);
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
+        $original->remove(Id::fromString(self::A));
 
-        self::assertFalse($collection->contains($id3));
+        self::assertSame([self::A, self::B], $original->toStringArray());
     }
 
-    public function testIsEmptyReturnsTrueForEmptyCollection(): void
+    public function testContainsReturnsTrueForAnIdWithTheSameValue(): void
     {
-        $collection = IdCollection::empty();
+        $collection = self::collection(self::A, self::B);
 
-        self::assertTrue($collection->isEmpty());
+        self::assertTrue($collection->contains(Id::fromString(self::B)));
     }
 
-    public function testIsEmptyReturnsFalseForNonEmptyCollection(): void
+    public function testContainsReturnsFalseForAnIdThatIsNotInTheCollection(): void
     {
-        $id = Id::new();
+        $collection = self::collection(self::A, self::B);
+
+        self::assertFalse($collection->contains(Id::fromString(self::C)));
+    }
+
+    public function testContainsReturnsFalseForAnEmptyCollection(): void
+    {
+        self::assertFalse(IdCollection::empty()->contains(Id::fromString(self::A)));
+    }
+
+    public function testIsEmptyReturnsTrueForACollectionWithNoIds(): void
+    {
+        self::assertTrue(IdCollection::empty()->isEmpty());
+    }
+
+    public function testIsEmptyReturnsFalseForACollectionWithOneId(): void
+    {
+        self::assertFalse(self::collection(self::A)->isEmpty());
+    }
+
+    public function testFirstReturnsTheFirstId(): void
+    {
+        $collection = self::collection(self::B, self::A, self::C);
+
+        self::assertSame(self::B, (string) $collection->first());
+    }
+
+    public function testLastReturnsTheLastId(): void
+    {
+        $collection = self::collection(self::B, self::A, self::C);
+
+        self::assertSame(self::C, (string) $collection->last());
+    }
+
+    public function testFirstAndLastReturnTheOnlyIdOfACollectionWithOneId(): void
+    {
+        $id = Id::fromString(self::A);
         $collection = IdCollection::fromArray([$id]);
 
-        self::assertFalse($collection->isEmpty());
+        self::assertSame($id, $collection->first());
+        self::assertSame($id, $collection->last());
     }
 
-    public function testFirstReturnsFirstId(): void
+    public function testFirstReturnsNullForAnEmptyCollection(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
-
-        $collection = IdCollection::fromArray([$id1, $id2, $id3]);
-
-        self::assertTrue($collection->first()?->sameAs($id1) ?? false);
+        self::assertNull(IdCollection::empty()->first());
     }
 
-    public function testFirstReturnsNullForEmptyCollection(): void
+    public function testLastReturnsNullForAnEmptyCollection(): void
     {
-        $collection = IdCollection::empty();
-
-        self::assertNull($collection->first());
+        self::assertNull(IdCollection::empty()->last());
     }
 
-    public function testLastReturnsLastId(): void
+    public function testCountReturnsTheNumberOfIdsWithDuplicates(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
-
-        $collection = IdCollection::fromArray([$id1, $id2, $id3]);
-
-        self::assertTrue($collection->last()?->sameAs($id3) ?? false);
+        self::assertCount(3, self::collection(self::A, self::B, self::A));
     }
 
-    public function testLastReturnsNullForEmptyCollection(): void
+    public function testToArrayReturnsTheSameIdObjectsInOrder(): void
     {
-        $collection = IdCollection::empty();
+        $first = Id::fromString(self::B);
+        $second = Id::fromString(self::A);
 
-        self::assertNull($collection->last());
+        $collection = IdCollection::fromArray([$first, $second]);
+
+        self::assertSame([$first, $second], $collection->toArray());
     }
 
-    public function testCountReturnsNumberOfIds(): void
+    public function testFilterKeepsTheIdsThatTheCallbackAcceptsInOrder(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        $collection = IdCollection::fromArray([$id1, $id2]);
-
-        self::assertCount(2, $collection);
-        self::assertSame(2, $collection->count());
-    }
-
-    public function testToArrayReturnsArrayOfIds(): void
-    {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        $collection = IdCollection::fromArray([$id1, $id2]);
-        $array = $collection->toArray();
-
-        self::assertIsArray($array);
-        self::assertCount(2, $array);
-        self::assertSame($id1, $array[0]);
-        self::assertSame($id2, $array[1]);
-    }
-
-    public function testFilterFiltersIdsBasedOnCallback(): void
-    {
-        $id1 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA1');
-        $id2 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA2');
-        $id3 = Id::fromString('01ARYZ6S41TSV4RRFFQ69G5FA3');
-
-        $collection = IdCollection::fromArray([$id1, $id2, $id3]);
+        $collection = self::collection(self::A, self::B, self::C, self::D);
 
         $filtered = $collection->filter(
-            static fn (Id $id): bool => str_ends_with((string) $id, '1') || str_ends_with((string) $id, '3')
+            static fn (Id $id): bool => in_array((string) $id, [self::D, self::B], true)
         );
 
-        self::assertCount(2, $filtered);
-        self::assertTrue($filtered->contains($id1));
-        self::assertFalse($filtered->contains($id2));
-        self::assertTrue($filtered->contains($id3));
+        self::assertSame([self::B, self::D], $filtered->toStringArray());
     }
 
-    public function testMapMapsIdsToOtherValues(): void
+    public function testFilterReturnsAnEmptyCollectionWhenTheCallbackAcceptsNoId(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $filtered = self::collection(self::A, self::B)->filter(static fn (Id $id): bool => false);
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
-        $strings = $collection->map(static fn (Id $id): string => (string) $id);
-
-        self::assertIsArray($strings);
-        self::assertCount(2, $strings);
-        self::assertSame((string) $id1, $strings[0]);
-        self::assertSame((string) $id2, $strings[1]);
+        self::assertSame([], $filtered->toArray());
     }
 
-    public function testCollectionIsIterable(): void
+    public function testFilterDoesNotChangeTheOriginalCollection(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $original = self::collection(self::A, self::B);
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
+        $original->filter(static fn (Id $id): bool => false);
 
-        $ids = [];
-        foreach ($collection as $id) {
-            $ids[] = $id;
-        }
-
-        self::assertCount(2, $ids);
-        self::assertSame($id1, $ids[0]);
-        self::assertSame($id2, $ids[1]);
+        self::assertSame([self::A, self::B], $original->toStringArray());
     }
 
-    public function testMergeCombinesTwoCollections(): void
+    public function testMapReturnsTheCallbackResultOfEachIdInOrder(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
+        $collection = self::collection(self::B, self::A);
 
-        $collection1 = IdCollection::fromArray([$id1, $id2]);
-        $collection2 = IdCollection::fromArray([$id3]);
+        $result = $collection->map(static fn (Id $id): string => 'id:' . substr((string) $id, -1));
 
-        $merged = $collection1->merge($collection2);
-
-        self::assertCount(3, $merged);
-        self::assertTrue($merged->contains($id1));
-        self::assertTrue($merged->contains($id2));
-        self::assertTrue($merged->contains($id3));
+        self::assertSame(['id:2', 'id:1'], $result);
     }
 
-    public function testMergeIsImmutable(): void
+    public function testMapReturnsAnEmptyArrayForAnEmptyCollection(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $result = IdCollection::empty()->map(static fn (Id $id): string => (string) $id);
 
-        $collection1 = IdCollection::fromArray([$id1]);
-        $collection2 = IdCollection::fromArray([$id2]);
-        $merged = $collection1->merge($collection2);
-
-        self::assertCount(1, $collection1);
-        self::assertCount(1, $collection2);
-        self::assertCount(2, $merged);
+        self::assertSame([], $result);
     }
 
-    public function testToStringArrayReturnsArrayOfStrings(): void
+    public function testIterationGivesTheIdObjectsInOrderWithListKeys(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $first = Id::fromString(self::B);
+        $second = Id::fromString(self::A);
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
-        $strings = $collection->toStringArray();
+        $collection = IdCollection::fromArray([$first, $second]);
 
-        self::assertIsArray($strings);
-        self::assertCount(2, $strings);
-        self::assertSame((string) $id1, $strings[0]);
-        self::assertSame((string) $id2, $strings[1]);
+        self::assertSame([$first, $second], iterator_to_array($collection));
     }
 
-    public function testToBinaryArrayReturnsArrayOfBinaryStrings(): void
+    /**
+     * @param list<string> $left
+     * @param list<string> $right
+     * @param list<string> $expected
+     */
+    #[DataProvider('provideMergeCases')]
+    public function testMergeAppendsTheIdsOfTheOtherCollection(array $left, array $right, array $expected): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
+        $merged = self::collection(...$left)->merge(self::collection(...$right));
 
-        $collection = IdCollection::fromArray([$id1, $id2]);
-        $binaries = $collection->toBinaryArray();
-
-        self::assertIsArray($binaries);
-        self::assertCount(2, $binaries);
-        self::assertSame($id1->toBinary(), $binaries[0]);
-        self::assertSame($id2->toBinary(), $binaries[1]);
+        self::assertSame($expected, $merged->toStringArray());
     }
 
-    public function testFromArrayReindexesArray(): void
+    /**
+     * @return iterable<string, array{list<string>, list<string>, list<string>}>
+     */
+    public static function provideMergeCases(): iterable
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        $collection = IdCollection::fromArray([
-            5 => $id1,
-            10 => $id2,
-        ]);
-        $array = $collection->toArray();
-
-        self::assertSame($id1, $array[0]);
-        self::assertSame($id2, $array[1]);
+        yield 'two ids and two ids' => [[self::A, self::B], [self::C, self::D], [self::A, self::B, self::C, self::D]];
+        yield 'two ids and one id' => [[self::B, self::A], [self::C], [self::B, self::A, self::C]];
+        yield 'an empty other collection' => [[self::A, self::B], [], [self::A, self::B]];
+        yield 'an empty collection and two ids' => [[], [self::A, self::B], [self::A, self::B]];
+        yield 'two empty collections' => [[], [], []];
+        yield 'an id that is in both collections' => [[self::A, self::B], [self::B], [self::A, self::B, self::B]];
     }
 
-    public function testIntersectReturnsCommonIds(): void
+    public function testMergeDoesNotChangeTheTwoCollections(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
-        $id4 = Id::new();
+        $left = self::collection(self::A);
+        $right = self::collection(self::B);
 
-        $collection1 = IdCollection::fromArray([$id1, $id2, $id3]);
-        $collection2 = IdCollection::fromArray([$id2, $id3, $id4]);
+        $left->merge($right);
 
-        $intersection = $collection1->intersect($collection2);
-
-        self::assertCount(2, $intersection);
-        self::assertFalse($intersection->contains($id1));
-        self::assertTrue($intersection->contains($id2));
-        self::assertTrue($intersection->contains($id3));
-        self::assertFalse($intersection->contains($id4));
+        self::assertSame([self::A], $left->toStringArray());
+        self::assertSame([self::B], $right->toStringArray());
     }
 
-    public function testIntersectReturnsEmptyWhenNoCommonIds(): void
-    {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
-        $id4 = Id::new();
+    /**
+     * @param list<string> $left
+     * @param list<string> $right
+     * @param list<string> $expected
+     */
+    #[DataProvider('provideIntersectCases')]
+    public function testIntersectReturnsTheIdsThatAreInBothCollections(
+        array $left,
+        array $right,
+        array $expected,
+    ): void {
+        $intersection = self::collection(...$left)->intersect(self::collection(...$right));
 
-        $collection1 = IdCollection::fromArray([$id1, $id2]);
-        $collection2 = IdCollection::fromArray([$id3, $id4]);
-
-        $intersection = $collection1->intersect($collection2);
-
-        self::assertCount(0, $intersection);
-        self::assertTrue($intersection->isEmpty());
+        self::assertSame($expected, $intersection->toStringArray());
     }
 
-    public function testIntersectWithEmptyCollectionReturnsEmpty(): void
+    /**
+     * @return iterable<string, array{list<string>, list<string>, list<string>}>
+     */
+    public static function provideIntersectCases(): iterable
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-
-        $collection1 = IdCollection::fromArray([$id1, $id2]);
-        $collection2 = IdCollection::empty();
-
-        $intersection = $collection1->intersect($collection2);
-
-        self::assertCount(0, $intersection);
-        self::assertTrue($intersection->isEmpty());
+        yield 'two common ids' => [[self::A, self::B, self::C], [self::B, self::C, self::D], [self::B, self::C]];
+        yield 'the order of the left side' => [[self::C, self::B, self::A], [self::A, self::C], [self::C, self::A]];
+        yield 'no common id' => [[self::A, self::B], [self::C, self::D], []];
+        yield 'an empty other collection' => [[self::A, self::B], [], []];
+        yield 'an empty collection' => [[], [self::A, self::B], []];
+        yield 'equal collections' => [[self::A, self::B], [self::A, self::B], [self::A, self::B]];
     }
 
-    public function testIntersectIsImmutable(): void
+    public function testIntersectDoesNotChangeTheTwoCollections(): void
     {
-        $id1 = Id::new();
-        $id2 = Id::new();
-        $id3 = Id::new();
+        $left = self::collection(self::A, self::B);
+        $right = self::collection(self::B, self::C);
 
-        $collection1 = IdCollection::fromArray([$id1, $id2]);
-        $collection2 = IdCollection::fromArray([$id2, $id3]);
+        $left->intersect($right);
 
-        $intersection = $collection1->intersect($collection2);
+        self::assertSame([self::A, self::B], $left->toStringArray());
+        self::assertSame([self::B, self::C], $right->toStringArray());
+    }
 
-        self::assertCount(2, $collection1);
-        self::assertCount(2, $collection2);
-        self::assertCount(1, $intersection);
+    public function testToStringArrayReturnsTheUlidStringsInOrder(): void
+    {
+        $collection = IdCollection::fromArray([Id::fromString(self::B), Id::fromString(self::A)]);
+
+        self::assertSame(['01ARYZ6S41TSV4RRFFQ69G5FA2', '01ARYZ6S41TSV4RRFFQ69G5FA1'], $collection->toStringArray());
+    }
+
+    public function testToBinaryArrayReturnsThe16ByteFormsInOrder(): void
+    {
+        $collection = self::collection(self::B, self::A);
+
+        self::assertSame(
+            ['01563df36481d6764c61efb99302bd42', '01563df36481d6764c61efb99302bd41'],
+            array_map(bin2hex(...), $collection->toBinaryArray())
+        );
+    }
+
+    private static function collection(string ...$ulids): IdCollection
+    {
+        return IdCollection::fromArray(array_map(Id::fromString(...), array_values($ulids)));
     }
 }
