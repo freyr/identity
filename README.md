@@ -8,7 +8,7 @@ Monotonic ULID identity objects for PHP domain models. Provides an immutable `Id
 composer require freyr/identity
 ```
 
-Requires PHP 8.2+.
+Requires PHP 8.2 or later. CI tests PHP 8.2, 8.3, 8.4 and 8.5.
 
 ## Usage
 
