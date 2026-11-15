@@ -14,7 +14,6 @@ use Symplify\CodingStandard\Fixer\Annotation\RemovePHPStormAnnotationFixer;
 use Symplify\CodingStandard\Fixer\Annotation\RemovePropertyVariableNameDescriptionFixer;
 use Symplify\CodingStandard\Fixer\ArrayNotation\ArrayListItemNewlineFixer;
 use Symplify\CodingStandard\Fixer\ArrayNotation\ArrayOpenerAndCloserNewlineFixer;
-use Symplify\CodingStandard\Fixer\Commenting\ParamReturnAndVarTagMalformsFixer;
 use Symplify\CodingStandard\Fixer\Commenting\RemoveUselessDefaultCommentFixer;
 use Symplify\CodingStandard\Fixer\LineLength\LineLengthFixer;
 use Symplify\CodingStandard\Fixer\Spacing\MethodChainingNewlineFixer;
@@ -37,7 +36,6 @@ return ECSConfig::configure()
         ]
     )
     ->withPreparedSets(psr12: true, common: true)
-    ->withPhpCsFixerSets(symfony: true)
     ->withConfiguredRule(YodaStyleFixer::class, [
         'equal' => false,
         'identical' => false,
@@ -50,7 +48,6 @@ return ECSConfig::configure()
     ->withRules([
         SingleLineEmptyBodyFixer::class,
         RemovePHPStormAnnotationFixer::class,
-        ParamReturnAndVarTagMalformsFixer::class,
         RemoveUselessDefaultCommentFixer::class,
         RemoveMethodNameDuplicateDescriptionFixer::class,
         RemovePropertyVariableNameDescriptionFixer::class,
