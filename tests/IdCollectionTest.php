@@ -6,9 +6,13 @@ namespace Freyr\Identity\Tests;
 
 use Freyr\Identity\Id;
 use Freyr\Identity\IdCollection;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(IdCollection::class)]
+#[UsesClass(Id::class)]
 final class IdCollectionTest extends TestCase
 {
     private const A = '01ARYZ6S41TSV4RRFFQ69G5FA1';
